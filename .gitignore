@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+.env
+
+# Data outputs
+data/raw/*
+data/bronze/*
+data/silver/*
+data/gold/*
+data/reports/*
+
+# Keep folder structure
+!data/raw/.gitkeep
+!data/bronze/.gitkeep
+!data/silver/.gitkeep
+!data/gold/.gitkeep
+!data/reports/.gitkeep
+
+# Local tools
+.DS_Store
+.vscode/
+.idea/
+
+# Dagster local state
+.dagster/
+storage/
+history/
