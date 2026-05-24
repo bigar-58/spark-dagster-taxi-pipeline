@@ -14,4 +14,3 @@ def create_spark_session(app_name: str = "taxi-pipeline") -> SparkSession:
         .config("spark.ui.showConsoleProgress", "false")
         .getOrCreate()
     )
-    
