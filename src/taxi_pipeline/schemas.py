@@ -24,7 +24,10 @@ YELLOW_TAXI_RAW_COLUMNS: tuple[str, ...] = (
     "airport_fee",
 )
 
-# Note: For the Bronze layer, data should be as unstructured as possible -> ingest all data as a string for later casting in Silver
+""" 
+Note: For the Bronze layer, data should be as unstructured as possible 
+-> ingest all data as a string for later casting in Silver
+"""
 YELLOW_TAXI_RAW_SCHEMA = StructType(
     [
         StructField(column_name, StringType(), nullable=True)
