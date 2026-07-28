@@ -63,12 +63,11 @@ def test_build_bronze_taxi_trips_adds_batch_metadata(spark: SparkSession) -> Non
         "_batch_id",
         F.col("_ingested_at").cast("long").alias("ingested_at_epoch"),
     ).first()
-    
+
     assert row is not None
     assert row["_source_file_path"] == "file:///tmp/yellow_taxi.csv"
     assert row["_batch_id"] == "batch-20240115"
     assert row["ingested_at_epoch"] == int(ingested_at.timestamp())
-
 
 
 def test_overwrite_parquet_replaces_existing_data(spark: SparkSession, tmp_path: Path) -> None:
