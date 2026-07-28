@@ -9,7 +9,7 @@ from taxi_pipeline.paths import (
     SAMPLE_DIR,
     SILVER_DIR,
     TAXI_ZONES_SAMPLE_DIR,
-    YELLOW_TAX_SAMPLE_DIR,
+    YELLOW_TAXI_SAMPLE_DIR,
 )
 
 
@@ -21,5 +21,5 @@ def test_project_data_directories_are_under_data_dir() -> None:
 
 
 def test_sample_input_directories_are_under_sample_dir() -> None:
-    assert YELLOW_TAX_SAMPLE_DIR.parent == SAMPLE_DIR
+    assert YELLOW_TAXI_SAMPLE_DIR.parent == SAMPLE_DIR
     assert TAXI_ZONES_SAMPLE_DIR.parent == SAMPLE_DIR

@@ -12,8 +12,11 @@ GOLD_DIR = DATA_DIR / "gold"
 REPORTS_DIR = DATA_DIR / "reports"
 SAMPLE_DIR = DATA_DIR / "sample"
 
-YELLOW_TAX_SAMPLE_DIR = SAMPLE_DIR / "yellow_taxi"
+YELLOW_TAXI_SAMPLE_DIR = SAMPLE_DIR / "yellow_taxi"
 TAXI_ZONES_SAMPLE_DIR = SAMPLE_DIR / "taxi_zones"
+
+YELLOW_TAXI_SAMPLE_FILE = YELLOW_TAXI_SAMPLE_DIR / "yellow_tripdata_sample.csv"
+YELLOW_TAXI_BRONZE_DIR = BRONZE_DIR / "yellow_taxi_trips"
 
 
 def ensure_data_directories():
