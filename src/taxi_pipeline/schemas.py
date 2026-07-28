@@ -34,3 +34,10 @@ YELLOW_TAXI_RAW_SCHEMA = StructType(
         for column_name in YELLOW_TAXI_RAW_COLUMNS
     ]
 )
+
+
+TAXI_ZONE_RAW_COLUMNS: tuple[str, ...] = ("LocationID", "Borough", "Zone", "service_zone")
+
+TAXI_ZONE_RAW_SCHEMA = StructType(
+    [StructField(column_name, StringType(), nullable=True) for column_name in TAXI_ZONE_RAW_COLUMNS]
+)

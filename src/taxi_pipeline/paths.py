@@ -22,6 +22,11 @@ YELLOW_TAXI_SILVER_DIR = SILVER_DIR / "yellow_taxi_trips"
 YELLOW_TAXI_SILVER_VALID_DIR = YELLOW_TAXI_SILVER_DIR / "valid"
 YELLOW_TAXI_SILVER_INVALID_DIR = YELLOW_TAXI_SILVER_DIR / "invalid"
 
+TAXI_ZONE_SAMPLE_FILE = TAXI_ZONES_SAMPLE_DIR / "taxi_zone_lookup_sample.csv"
+YELLOW_TAXI_GOLD_DIR = GOLD_DIR / "yellow_taxi"
+DAILY_ZONE_METRICS_GOLD_DIR = YELLOW_TAXI_GOLD_DIR / "daily_zone_metrics"
+HOURLY_DEMAND_METRICS_GOLD_DIR = YELLOW_TAXI_GOLD_DIR / "hourly_demand_metrics"
+
 
 def ensure_data_directories():
     """
@@ -34,9 +39,10 @@ def ensure_data_directories():
         GOLD_DIR,
         REPORTS_DIR,
         YELLOW_TAXI_BRONZE_DIR,
-        YELLOW_TAXI_SILVER_DIR,
         YELLOW_TAXI_SILVER_VALID_DIR,
         YELLOW_TAXI_SILVER_INVALID_DIR,
+        DAILY_ZONE_METRICS_GOLD_DIR,
+        HOURLY_DEMAND_METRICS_GOLD_DIR,
     ]
     for directory in directories_to_init:
         directory.mkdir(parents=True, exist_ok=True)
