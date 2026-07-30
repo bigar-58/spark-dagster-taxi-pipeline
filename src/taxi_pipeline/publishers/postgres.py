@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import psycopg
 from psycopg import sql
@@ -25,7 +25,7 @@ DAILY_ZONE_COLUMNS: tuple[str, ...] = (
     "card_payment_share",
     "cash_payment_share",
     "source_batch_count",
-    "latest_source_ingested_at"
+    "latest_source_ingested_at",
 )
 
 HOURLY_DEMAND_COLUMNS: tuple[str, ...] = (
@@ -41,7 +41,7 @@ HOURLY_DEMAND_COLUMNS: tuple[str, ...] = (
     "card_payment_share",
     "cash_payment_share",
     "source_batch_count",
-    "latest_source_ingested_at"
+    "latest_source_ingested_at",
 )
 
 
@@ -52,14 +52,14 @@ class PublishResult:
     date_to: date
     daily_zone_row_count: int
     hourly_demand_row_count: int
-    
+
 
 def require_columns(df: DataFrame, required_columns: tuple[str, ...], dataset_name: str) -> None:
     missing_columns = sorted(set(required_columns) - set(df.columns))
-    
+
     if missing_columns:
         raise ValueError(f"{dataset_name} is missing columns: {missing_columns}")
-    
+
 
 def copy_dataframe(
     connection: psycopg.Connection,
@@ -68,33 +68,26 @@ def copy_dataframe(
     schema_name: str,
     table_name: str,
     source_columns: tuple[str, ...],
-    publish_run_id: str
+    publish_run_id: str,
 ) -> int:
     target_columns = (*source_columns, "publish_run_id")
-    
-    copy_stmt = sql.SQL(
-        "COPY {} ({}) FROM STDIN"
-    ).format(
-        sql.Identifier(schema_name, table_name),
-        sql.SQL(",").join(sql.Identifier(column) for column in target_columns)
+
+    copy_stmt = sql.SQL("COPY {} ({}) FROM STDIN").format(
+        sql.Identifier(schema_name, table_name), sql.SQL(",").join(sql.Identifier(column) for column in target_columns)
     )
-    
+
     rows_written = 0
-    
+
     with connection.cursor() as cursor:
         with cursor.copy(copy_stmt) as copy:
             for row in df.select(*source_columns).toLocalIterator():
                 copy.write_row((*tuple(row), publish_run_id))
                 rows_written += 1
-    
+
     return rows_written
 
-def record_publish_started(
-    settings: PostgresSettings,
-    *,
-    run_id: str,
-    started_at: datetime
-) -> None:
+
+def record_publish_started(settings: PostgresSettings, *, run_id: str, started_at: datetime) -> None:
     with psycopg.connect(**settings.connection_kwargs()) as connection:
         connection.execute(
             """
@@ -105,15 +98,11 @@ def record_publish_started(
             )
             VALUES (%s, 'running', %s)
             """,
-            (run_id, started_at)
+            (run_id, started_at),
         )
-        
-def record_publish_failed(
-    settings: PostgresSettings,
-    *,
-    run_id: str,
-    error: Exception
-) -> None:
+
+
+def record_publish_failed(settings: PostgresSettings, *, run_id: str, error: Exception) -> None:
     with psycopg.connect(**settings.connection_kwargs()) as connection:
         connection.execute(
             """
@@ -125,30 +114,26 @@ def record_publish_failed(
             WHERE run_id = %s
             """,
             (
-                datetime.now(timezone.utc),
+                datetime.now(UTC),
                 str(error)[:2000],
                 run_id,
-            )
+            ),
         )
-    
+
+
 def publish_gold_marts(
-    daily_zone_df: DataFrame,
-    hourly_demand_df: DataFrame,
-    *, 
-    settings: PostgresSettings,
-    run_id: str
+    daily_zone_df: DataFrame, hourly_demand_df: DataFrame, *, settings: PostgresSettings, run_id: str
 ) -> PublishResult:
     """Publish both daily and hourly metrics gold marts"""
-    
-    #Check that we have all required columns in the data frames
+
+    # Check that we have all required columns in the data frames
     require_columns(daily_zone_df, DAILY_ZONE_COLUMNS, "daily zone metrics")
     require_columns(hourly_demand_df, HOURLY_DEMAND_COLUMNS, "hourly demand metrics")
-    
-    
-    started_at = datetime.now(timezone.utc)
-    
+
+    started_at = datetime.now(UTC)
+
     record_publish_started(settings, run_id=run_id, started_at=started_at)
-    
+
     # TO-DO update to avoid full table load for data marts.
     try:
         with psycopg.connect(**settings.connection_kwargs()) as connection:
@@ -160,30 +145,29 @@ def publish_gold_marts(
                         staging.hourly_demand_metrics
                     """
                 )
-                
+
                 daily_count = copy_dataframe(
                     connection,
                     daily_zone_df,
                     schema_name="staging",
                     table_name="daily_zone_metrics",
                     source_columns=DAILY_ZONE_COLUMNS,
-                    publish_run_id=run_id
+                    publish_run_id=run_id,
                 )
-                
+
                 hourly_count = copy_dataframe(
                     connection,
                     hourly_demand_df,
                     schema_name="staging",
                     table_name="hourly_demand_metrics",
                     source_columns=HOURLY_DEMAND_COLUMNS,
-                    publish_run_id=run_id
+                    publish_run_id=run_id,
                 )
-                
+
                 if daily_count == 0 or hourly_count == 0:
                     raise ValueError("Gold marts must both contain at least one row")
-                
-                
-                #Check if any duplicates exist in the copied dataset
+
+                # Check if any duplicates exist in the copied dataset
                 duplicate_daily = connection.execute(
                     """
                     SELECT EXISTS (
@@ -194,7 +178,7 @@ def publish_gold_marts(
                     )
                     """
                 ).fetchone()
-                
+
                 duplicate_hourly = connection.execute(
                     """
                     SELECT EXISTS (
@@ -205,14 +189,13 @@ def publish_gold_marts(
                     )
                     """
                 ).fetchone()
-                
-                
+
                 if duplicate_daily and duplicate_daily[0]:
                     raise ValueError("Staged daily-zone metrics contain duplicate keys")
-                
+
                 if duplicate_hourly and duplicate_hourly[0]:
                     raise ValueError("Staged hourly metrics contain duplicate keys")
-                
+
                 date_window = connection.execute(
                     """
                     SELECT
@@ -229,12 +212,10 @@ def publish_gold_marts(
                     ) AS publish_dates
                     """
                 ).fetchone()
-                
+
                 if not date_window or not date_window[0] or not date_window[1]:
                     raise ValueError("Unable to find a complete date range for staged data")
-                
-                
-                
+
                 date_from, date_to = date_window
 
                 # Delete existing data in gold marts for staged date range/window
@@ -243,7 +224,7 @@ def publish_gold_marts(
                     DELETE FROM mart.daily_zone_metrics
                     WHERE pickup_date BETWEEN %s AND %s
                     """,
-                    (date_from, date_to)
+                    (date_from, date_to),
                 )
 
                 connection.execute(
@@ -251,7 +232,7 @@ def publish_gold_marts(
                     DELETE FROM mart.hourly_demand_metrics
                     WHERE pickup_date BETWEEN %s AND %s
                     """,
-                    (date_from, date_to)
+                    (date_from, date_to),
                 )
 
                 # Re-insert/update the staged date-range's data in the gold-mart.
@@ -270,9 +251,8 @@ def publish_gold_marts(
                     FROM staging.hourly_demand_metrics
                     """
                 )
-                
-                
-                completed_at = datetime.now(timezone.utc)
+
+                completed_at = datetime.now(UTC)
 
                 connection.execute(
                     """
@@ -300,9 +280,8 @@ def publish_gold_marts(
             date_from=date_from,
             date_to=date_to,
             daily_zone_row_count=daily_count,
-            hourly_demand_row_count=hourly_count
+            hourly_demand_row_count=hourly_count,
         )
     except Exception as error:
         record_publish_failed(settings, run_id=run_id, error=error)
         raise
-        

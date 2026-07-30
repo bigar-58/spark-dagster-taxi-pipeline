@@ -78,8 +78,7 @@ def build_silver_taxi_trips(bronze_df: DataFrame) -> DataFrame:
         .withColumn("pickup_month", F.month("pickup_timestamp"))
         .withColumn(
             "trip_duration_minutes",
-            (F.col("dropoff_timestamp").cast("long") - F.col("pickup_timestamp").cast("long"))
-            / F.lit(60.0),
+            (F.col("dropoff_timestamp").cast("long") - F.col("pickup_timestamp").cast("long")) / F.lit(60.0),
         )
         .withColumn(
             "fare_per_mile",
@@ -122,9 +121,9 @@ def build_silver_taxi_trips(bronze_df: DataFrame) -> DataFrame:
         ),
     )
 
-    return casted_df.withColumn(
-        "_invalid_reasons", F.filter(invalid_reasons, lambda reason: reason.isNotNull())
-    ).withColumn("is_valid", F.size("_invalid_reasons") == 0)
+    return casted_df.withColumn("_invalid_reasons", F.filter(invalid_reasons, lambda reason: reason.isNotNull())).withColumn(
+        "is_valid", F.size("_invalid_reasons") == 0
+    )
 
 
 def split_valid_and_invalid_trips(silver_df: DataFrame) -> tuple[DataFrame, DataFrame]:

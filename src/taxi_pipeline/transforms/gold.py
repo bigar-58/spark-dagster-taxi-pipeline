@@ -61,9 +61,7 @@ def enrich_trips_with_pickup_zone(valid_trips_df: DataFrame, taxi_zones_df: Data
     zones = taxi_zones_df.alias("zones")
 
     # Left-join due to also wanting trips that don't happend to have zone info matching in zone lookup.
-    return trips.join(
-        zones, F.col("trips.pickup_location_id") == F.col("zones.location_id"), how="left"
-    ).select(
+    return trips.join(zones, F.col("trips.pickup_location_id") == F.col("zones.location_id"), how="left").select(
         "trips.*",
         F.coalesce(
             F.col("zones.borough"),

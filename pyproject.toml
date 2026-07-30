@@ -9,12 +9,15 @@ description = "Local-first batch analytics pipeline using Dagster, PySpark, Post
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "dagster==1.13.15",
     "psycopg[binary]==3.3.4",
     "pyspark==3.5.1"
 ]
 
 [project.optional-dependencies]
 dev = [
+    "dagster-dg-cli==1.13.15",
+    "dagster-webserver==1.13.15",
     "pytest==8.3.4",
     "ruff==0.8.6"
 ]
@@ -38,3 +41,11 @@ select = [
     "UP",
     "B"
 ]
+
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "taxi_pipeline"
+code_location_target_module = "taxi_pipeline.definitions"

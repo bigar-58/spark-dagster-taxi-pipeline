@@ -11,7 +11,7 @@ from taxi_pipeline.paths import YELLOW_TAXI_SAMPLE_FILE
 from taxi_pipeline.transforms.bronze import build_bronze_taxi_trips
 from taxi_pipeline.transforms.silver import (
     build_silver_taxi_trips,
-    split_valid_and_invalid_trips,
+    split_valid_and_invalid_trips
 )
 
 
@@ -30,7 +30,7 @@ def silver_taxi_df(spark: SparkSession):
             12,
             0,
             tzinfo=UTC,
-        ),
+        )
     )
 
     return build_silver_taxi_trips(bronze_df)
@@ -58,11 +58,7 @@ def test_silver_taxi_trips_identifies_expected_invalid_rows(silver_taxi_df) -> N
     assert valid_df.count() == 3
     assert invalid_df.count() == 2
 
-    reasons = {
-        reason
-        for row in invalid_df.select("_invalid_reasons").collect()
-        for reason in row["_invalid_reasons"]
-    }
+    reasons = {reason for row in invalid_df.select("_invalid_reasons").collect() for reason in row["_invalid_reasons"]}
 
     assert "dropoff_not_after_pickup" in reasons
     assert "non_positive_trip_distance" in reasons

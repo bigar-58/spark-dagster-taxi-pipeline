@@ -13,9 +13,7 @@ def overwrite_parquet(df: DataFrame, output_path: Path) -> None:
     df.write.mode("overwrite").parquet(str(output_path))
 
 
-def overwrite_partitioned_parquet(
-    df: DataFrame, output_path: Path, partition_columns: Sequence[str]
-) -> None:
+def overwrite_partitioned_parquet(df: DataFrame, output_path: Path, partition_columns: Sequence[str]) -> None:
     """Replace a parquet dataset partitioned by the input columns"""
     if not partition_columns:
         raise ValueError("At least one partition column is required")
@@ -23,9 +21,7 @@ def overwrite_partitioned_parquet(
     missing_columns = sorted(set(partition_columns) - set(df.columns))
 
     if missing_columns:
-        raise ValueError(
-            f"There exists partition column(s) missing from DataFrame: {missing_columns}"
-        )
+        raise ValueError(f"There exists partition column(s) missing from DataFrame: {missing_columns}")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 

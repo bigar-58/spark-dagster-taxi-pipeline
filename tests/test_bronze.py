@@ -25,18 +25,14 @@ def test_read_yellow_taxi_expected_schema(spark: SparkSession) -> None:
     assert result.count() == 5
 
     for field in result.schema.fields:
-        assert isinstance(
-            field.dataType, StringType
-        )  # All of the raw data should be ingested as a string
+        assert isinstance(field.dataType, StringType)  # All of the raw data should be ingested as a string
 
 
 def test_read_yellow_taxi_src_file_path(spark: SparkSession) -> None:
     """Ensure source paths written to data frame on ingest"""
     result = read_yellow_taxi_csv(spark=spark, input_path=YELLOW_TAXI_SAMPLE_FILE)
 
-    src_paths = [
-        row["_source_file_path"] for row in result.select("_source_file_path").distinct().collect()
-    ]
+    src_paths = [row["_source_file_path"] for row in result.select("_source_file_path").distinct().collect()]
 
     assert len(src_paths) == 1
     assert src_paths[0].endswith(YELLOW_TAXI_SAMPLE_FILE.name)  # File should point to input path

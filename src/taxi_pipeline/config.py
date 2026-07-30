@@ -13,17 +13,10 @@ class PostgresSettings:
     dbname: str
     user: str
     password: str = field(repr=False)
-    
-    
+
     @classmethod
     def from_env(cls) -> PostgresSettings:
-        required_variables = (
-            "POSTGRES_HOST",
-            "POSTGRES_PORT",
-            "POSTGRES_DB",
-            "POSTGRES_USER",
-            "POSTGRES_PASSWORD"
-        )
+        required_variables = ("POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD")
 
         missing_variables = [variable for variable in required_variables if not os.getenv(variable)]
 
@@ -40,7 +33,7 @@ class PostgresSettings:
             port=port,
             dbname=os.environ["POSTGRES_DB"],
             user=os.environ["POSTGRES_USER"],
-            password=os.environ["POSTGRES_PASSWORD"]
+            password=os.environ["POSTGRES_PASSWORD"],
         )
 
     def connection_kwargs(self) -> dict[str, str | int]:
@@ -52,5 +45,5 @@ class PostgresSettings:
             "dbname": self.dbname,
             "user": self.user,
             "password": self.password,
-            "connect_timeout": 5
+            "connect_timeout": 5,
         }

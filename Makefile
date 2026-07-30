@@ -1,4 +1,4 @@
-.PHONY: test lint format check infra-up infra-down infra-logs infra-reset
+.PHONY: test lint format check infra-up infra-down infra-logs infra-reset publish-gold dagster-check dagster-dev
 
 test: 
 	pytest
@@ -26,3 +26,12 @@ infra-reset:
 publish-gold:
 	@set -a; . ./.env; set +a; \
 	python -m taxi_pipeline.run_publish_gold
+
+dagster-check:
+	@set -a; . ./.env; set +a; \
+	dg check defs
+
+dagster-dev:
+	@mkdir -p .dagster
+	@set -a; . ./.env; set +a; \
+	DAGSTER_HOME="$(CURDIR)/.dagster" dg dev

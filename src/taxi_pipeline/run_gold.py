@@ -43,13 +43,11 @@ def main():
         raw_zones_df = read_taxi_zone_csv(spark=spark, input_path=TAXI_ZONE_SAMPLE_FILE)
 
         taxi_zones_df = build_taxi_zone_dim(raw_zones_df)
-        assert_unique_non_null_key(
-            taxi_zones_df, key_column="location_id", dataset_name="taxi-zone dimension"
-        )
+        assert_unique_non_null_key(taxi_zones_df, key_column="location_id", dataset_name="taxi-zone dimension")
 
-        enriched_trips_df = enrich_trips_with_pickup_zone(
-            valid_trips_df=valid_trips_df, taxi_zones_df=taxi_zones_df
-        ).persist(StorageLevel.MEMORY_AND_DISK)
+        enriched_trips_df = enrich_trips_with_pickup_zone(valid_trips_df=valid_trips_df, taxi_zones_df=taxi_zones_df).persist(
+            StorageLevel.MEMORY_AND_DISK
+        )
 
         daily_zone_metrics_df = build_daily_zone_metrics(enriched_trips_df)
         hourly_demand_metrics_df = build_hourly_demand_metrics(enriched_trips_df)
