@@ -9,10 +9,7 @@ from pyspark.sql import functions as F
 from taxi_pipeline.io.readers import read_yellow_taxi_csv
 from taxi_pipeline.paths import YELLOW_TAXI_SAMPLE_FILE
 from taxi_pipeline.transforms.bronze import build_bronze_taxi_trips
-from taxi_pipeline.transforms.silver import (
-    build_silver_taxi_trips,
-    split_valid_and_invalid_trips
-)
+from taxi_pipeline.transforms.silver import build_silver_taxi_trips, split_valid_and_invalid_trips
 
 
 @pytest.fixture
@@ -30,7 +27,7 @@ def silver_taxi_df(spark: SparkSession):
             12,
             0,
             tzinfo=UTC,
-        )
+        ),
     )
 
     return build_silver_taxi_trips(bronze_df)

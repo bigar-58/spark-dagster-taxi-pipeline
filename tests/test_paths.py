@@ -9,7 +9,7 @@ from taxi_pipeline.paths import (
     SAMPLE_DIR,
     SILVER_DIR,
     TAXI_ZONES_SAMPLE_DIR,
-    YELLOW_TAXI_SAMPLE_DIR
+    YELLOW_TAXI_SAMPLE_DIR,
 )
 
 
