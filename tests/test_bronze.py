@@ -13,6 +13,7 @@ from taxi_pipeline.io.writers import overwrite_parquet
 from taxi_pipeline.paths import YELLOW_TAXI_SAMPLE_FILE
 from taxi_pipeline.schemas import YELLOW_TAXI_RAW_COLUMNS
 from taxi_pipeline.transforms.bronze import build_bronze_taxi_trips
+from taxi_pipeline.run_bronze import run_bronze_stage
 
 
 def test_read_yellow_taxi_expected_schema(spark: SparkSession) -> None:
@@ -86,3 +87,26 @@ def test_overwrite_parquet_replaces_existing_data(spark: SparkSession, tmp_path:
     assert (len(rows)) == 1
     assert rows[0]["record_id"] == 2
     assert rows[0]["value"] == "second"
+
+
+def test_run_bronze_stage_writes_dataset(spark: SparkSession, tmp_path: Path) -> None:
+    ingested_at = datetime(2024, 1, 15, 12, 30, tzinfo=UTC)
+    output_path = tmp_path / "bronze-taxi"
+
+    result = run_bronze_stage(
+        spark,
+        batch_id="test-batch-20240115",
+        ingested_at=ingested_at,
+        input_path=YELLOW_TAXI_SAMPLE_FILE,
+        output_path=output_path,
+    )
+
+    written_df = spark.read.parquet(str(output_path))
+
+    assert result.row_count == 5
+    assert result.output_path == output_path
+    assert written_df.count() == 5
+
+    batch_ids = [row["_batch_id"] for row in written_df.select("_batch_id").distinct().collect()]
+
+    assert batch_ids == ["test-batch-20240115"]
