@@ -22,3 +22,7 @@ infra-logs:
 
 infra-reset:
 	docker compose down -v
+
+publish-gold:
+	@set -a; . ./.env; set +a; \
+	python -m taxi_pipeline.run_publish_gold
