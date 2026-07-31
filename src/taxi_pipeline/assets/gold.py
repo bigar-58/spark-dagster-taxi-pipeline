@@ -7,7 +7,7 @@ from taxi_pipeline.run_gold import run_gold_stage
         "gold_daily_zone_metrics": dg.AssetOut(),
         "gold_hourly_demand_metrics": dg.AssetOut()
     },
-    deps=[dg.AssetKey("silver_valid_taxi_trips")],
+    deps=[dg.AssetKey("silver_valid_taxi_trips"), dg.AssetKey("taxi_zone_lookup")],
     group_name="gold",
     required_resource_keys={"spark"},
     description="Enrich silver taxi data with zone data and create daily and hourly metrics"
@@ -34,7 +34,7 @@ def gold_taxi_metrics(context: dg.AssetExecutionContext):
             "date_from": date_from,
             "date_to": date_to,
             "silver_input_dataset": dg.MetadataValue.path(str(result.silver_input_path)),
-            "zone_lookup_file": dg.MetadataValue.path(str(result.zone_lookup_input_path)),
+            "zone_lookup_dataset": dg.MetadataValue.path(str(result.zone_lookup_input_path)),
             "output_dataset": dg.MetadataValue.path(str(result.daily_zone_output_path)),
             "partition_columns": ("pickup_year, pickup_month")
         },
@@ -50,7 +50,7 @@ def gold_taxi_metrics(context: dg.AssetExecutionContext):
                 "date_from": date_from,
                 "date_to": date_to,
                 "silver_input_dataset": dg.MetadataValue.path(str(result.silver_input_path)),
-                "zone_lookup_file": dg.MetadataValue.path(str(result.zone_lookup_input_path)),
+                "zone_lookup_dataset": dg.MetadataValue.path(str(result.zone_lookup_input_path)),
                 "output_dataset": dg.MetadataValue.path(str(result.hourly_demand_output_path)),
                 "partition_columns": ("pickup_year, pickup_month")
             },

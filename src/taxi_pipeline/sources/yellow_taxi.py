@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import shutil
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
-from urllib.error import URLError
-from urllib.request import Request, urlopen
+
+from taxi_pipeline.io.downloads import download_file
 
 from taxi_pipeline.paths import (
     YELLOW_TAXI_RAW_DIR,

@@ -8,7 +8,7 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
 from taxi_pipeline.io.readers import read_taxi_zone_csv, read_yellow_taxi_csv
-from taxi_pipeline.io.writers import overwrite_partitioned_parquet
+from taxi_pipeline.io.writers import overwrite_parquet, overwrite_partitioned_parquet
 from taxi_pipeline.paths import TAXI_ZONE_SAMPLE_FILE, YELLOW_TAXI_SAMPLE_FILE
 from taxi_pipeline.quality.checks import assert_unique_non_null_key
 from taxi_pipeline.transforms.bronze import build_bronze_taxi_trips
@@ -89,6 +89,7 @@ def test_run_gold_stage_writes_both_datasets(spark: SparkSession,tmp_path: Path)
     silver_input_path = tmp_path / "silver-valid"
     daily_output_path = tmp_path / "gold-daily"
     hourly_output_path = tmp_path / "gold-hourly"
+    zone_lookup_input_path = tmp_path / "taxi-zone-reference"
 
     raw_trips_df = read_yellow_taxi_csv(spark=spark, input_path=YELLOW_TAXI_SAMPLE_FILE)
 
@@ -102,11 +103,16 @@ def test_run_gold_stage_writes_both_datasets(spark: SparkSession,tmp_path: Path)
     valid_df, _ = split_valid_and_invalid_trips(silver_df)
 
     overwrite_partitioned_parquet(valid_df,silver_input_path,partition_columns=["pickup_year","pickup_month"])
+    
+    raw_zones_df = read_taxi_zone_csv(spark=spark, input_path=TAXI_ZONE_SAMPLE_FILE)
+    taxi_zones_df = build_taxi_zone_dim(raw_zones_df)
+
+    overwrite_parquet(taxi_zones_df,zone_lookup_input_path)
 
     result = run_gold_stage(
         spark,
         silver_input_path=silver_input_path,
-        zone_lookup_input_path=TAXI_ZONE_SAMPLE_FILE,
+        zone_lookup_input_path=zone_lookup_input_path,
         daily_zone_output_path=daily_output_path,
         hourly_demand_output_path=hourly_output_path
     )

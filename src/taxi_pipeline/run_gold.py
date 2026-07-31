@@ -8,15 +8,12 @@ from pyspark import StorageLevel
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-from taxi_pipeline.io.readers import (
-    read_parquet_dataset,
-    read_taxi_zone_csv
-)
+from taxi_pipeline.io.readers import read_parquet_dataset
 from taxi_pipeline.io.writers import overwrite_partitioned_parquet
 from taxi_pipeline.paths import (
     DAILY_ZONE_METRICS_GOLD_DIR,
     HOURLY_DEMAND_METRICS_GOLD_DIR,
-    TAXI_ZONE_SAMPLE_FILE,
+    TAXI_ZONE_REFERENCE_DIR,
     YELLOW_TAXI_SILVER_VALID_DIR,
     ensure_data_directories
 )
@@ -25,7 +22,6 @@ from taxi_pipeline.spark import create_spark_session
 from taxi_pipeline.transforms.gold import (
     build_daily_zone_metrics,
     build_hourly_demand_metrics,
-    build_taxi_zone_dim,
     enrich_trips_with_pickup_zone
 )
 
@@ -60,7 +56,7 @@ def run_gold_stage(
     spark: SparkSession,
     *,
     silver_input_path: Path = YELLOW_TAXI_SILVER_VALID_DIR,
-    zone_lookup_input_path: Path = TAXI_ZONE_SAMPLE_FILE,
+    zone_lookup_input_path: Path = TAXI_ZONE_REFERENCE_DIR,
     daily_zone_output_path: Path = DAILY_ZONE_METRICS_GOLD_DIR,
     hourly_demand_output_path: Path = HOURLY_DEMAND_METRICS_GOLD_DIR
 ) -> GoldRunResult:
@@ -69,9 +65,8 @@ def run_gold_stage(
     """
     
     valid_trips_df = read_parquet_dataset(spark=spark, input_path=silver_input_path)
-    raw_zones_df = read_taxi_zone_csv(spark=spark, input_path=zone_lookup_input_path)
     
-    taxi_zones_df = build_taxi_zone_dim(raw_zones_df)
+    taxi_zones_df = read_parquet_dataset(spark=spark, input_path=zone_lookup_input_path)
     
     assert_unique_non_null_key(taxi_zones_df, key_column="location_id", dataset_name="taxi-zone dimension")
     

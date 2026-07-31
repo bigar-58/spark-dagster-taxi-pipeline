@@ -14,6 +14,7 @@ data/bronze/*
 data/silver/*
 data/gold/*
 data/reports/*
+data/reference/*
 
 # Keep folder structure
 !data/raw/.gitkeep
@@ -21,6 +22,7 @@ data/reports/*
 !data/silver/.gitkeep
 !data/gold/.gitkeep
 !data/reports/.gitkeep
+!data/reference/.gitkeep
 
 # Local tools
 .DS_Store
