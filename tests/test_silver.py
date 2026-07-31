@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 from pyspark.sql import SparkSession
@@ -10,6 +11,8 @@ from taxi_pipeline.io.readers import read_yellow_taxi_csv
 from taxi_pipeline.paths import YELLOW_TAXI_SAMPLE_FILE
 from taxi_pipeline.transforms.bronze import build_bronze_taxi_trips
 from taxi_pipeline.transforms.silver import build_silver_taxi_trips, split_valid_and_invalid_trips
+from taxi_pipeline.io.writers import overwrite_parquet
+from taxi_pipeline.run_silver import run_silver_stage
 
 
 @pytest.fixture
@@ -59,3 +62,32 @@ def test_silver_taxi_trips_identifies_expected_invalid_rows(silver_taxi_df) -> N
 
     assert "dropoff_not_after_pickup" in reasons
     assert "non_positive_trip_distance" in reasons
+
+
+def test_run_silver_stage_writes_both_datasets(spark: SparkSession, tmp_path: Path):
+    bronze_input_path = tmp_path / "bronze"
+    valid_output_path = tmp_path / "silver-valid"
+    invalid_output_path = tmp_path / "silver-invalid"
+    
+    raw_df = read_yellow_taxi_csv(spark=spark, input_path=YELLOW_TAXI_SAMPLE_FILE)
+    bronze_df = build_bronze_taxi_trips(
+        raw_df=raw_df,
+        batch_id="silver-stage-test",
+        ingested_at=datetime(2024, 1, 3, 12, 0, tzinfo=UTC)
+    )
+    
+    overwrite_parquet(bronze_df, bronze_input_path)
+    
+    result = run_silver_stage(spark=spark, bronze_input_path=bronze_input_path, valid_output_path=valid_output_path, invalid_output_path=invalid_output_path)
+    
+    valid_df = spark.read.parquet(str(valid_output_path))
+    invalid_df = spark.read.parquet(str(invalid_output_path))
+    
+    assert result.total_row_count == 5
+    assert result.valid_row_count == 3
+    assert result.invalid_row_count == 2
+    assert result.invalid_row_rate == pytest.approx(0.4)
+
+    assert valid_df.count() == 3
+    assert invalid_df.count() == 2
+    
