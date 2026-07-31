@@ -8,7 +8,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 
-from taxi_pipeline.io.readers import read_yellow_taxi_csv
+from taxi_pipeline.io.readers import read_yellow_taxi_csv, read_yellow_taxi_parquet
 from taxi_pipeline.io.writers import overwrite_parquet
 from taxi_pipeline.paths import YELLOW_TAXI_SAMPLE_FILE
 from taxi_pipeline.schemas import YELLOW_TAXI_RAW_COLUMNS
@@ -58,7 +58,7 @@ def test_build_bronze_taxi_trips_adds_batch_metadata(spark: SparkSession) -> Non
     row = result.select(
         "_source_file_path",
         "_batch_id",
-        F.col("_ingested_at").cast("long").alias("ingested_at_epoch"),
+        F.col("_ingested_at").cast("long").alias("ingested_at_epoch")
     ).first()
 
     assert row is not None
@@ -72,11 +72,11 @@ def test_overwrite_parquet_replaces_existing_data(spark: SparkSession, tmp_path:
 
     first_df = spark.createDataFrame(
         [(1, "first")],
-        ["record_id", "value"],
+        ["record_id", "value"]
     )
     second_df = spark.createDataFrame(
         [(2, "second")],
-        ["record_id", "value"],
+        ["record_id", "value"]
     )
 
     overwrite_parquet(first_df, output_path=output_path)
@@ -97,12 +97,14 @@ def test_run_bronze_stage_writes_dataset(spark: SparkSession, tmp_path: Path) ->
         spark,
         batch_id="test-batch-20240115",
         ingested_at=ingested_at,
-        input_path=YELLOW_TAXI_SAMPLE_FILE,
-        output_path=output_path,
+        output_path=output_path
     )
 
     written_df = spark.read.parquet(str(output_path))
 
+    assert result.source_mode == "sample"
+    assert result.input_format == "csv"
+    assert result.input_path == YELLOW_TAXI_SAMPLE_FILE
     assert result.row_count == 5
     assert result.output_path == output_path
     assert written_df.count() == 5
@@ -110,3 +112,31 @@ def test_run_bronze_stage_writes_dataset(spark: SparkSession, tmp_path: Path) ->
     batch_ids = [row["_batch_id"] for row in written_df.select("_batch_id").distinct().collect()]
 
     assert batch_ids == ["test-batch-20240115"]
+
+
+def test_read_yellow_taxi_parquet_normalizes_bronze_schema(spark: SparkSession,tmp_path: Path) -> None:
+    parquet_path = tmp_path / "yellow-taxi.parquet"
+
+    sample_df = (
+        read_yellow_taxi_csv(
+            spark=spark,
+            input_path=YELLOW_TAXI_SAMPLE_FILE
+        )
+        .drop("_source_file_path")
+        .withColumn(
+            "VendorID",
+            F.col("VendorID").cast("integer")
+        )
+        .withColumnRenamed("airport_fee","Airport_fee")
+    )
+
+    sample_df.write.mode("overwrite").parquet(str(parquet_path))
+
+    result = read_yellow_taxi_parquet(spark=spark,input_path=parquet_path)
+
+    assert "airport_fee" in result.columns
+    assert "Airport_fee" not in result.columns
+    assert "_source_file_path" in result.columns
+
+    for field in result.schema.fields:
+        assert isinstance(field.dataType,StringType)
